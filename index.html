@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mortgage Calculator with Extra Payments</title>
+<meta name="description" content="Calculate your monthly mortgage payment, total interest and how much extra payments save you.">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F3F6F4;--card:#FFFFFF;--ink:#0F2A24;--mute:#5A6F68;--line:#D9E3DE;--brand:#0B6E4F;--brandink:#FFFFFF;--hi:#E5F3EC;--amber:#C77700;--bar2:#E2A33B;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0D1815;--card:#15251F;--ink:#E8F2ED;--mute:#9BB1A8;--line:#27403A;--brand:#3FCB98;--brandink:#06241A;--hi:#17352B;--amber:#F0B34D;--bar2:#E2A33B}}
+:root[data-theme="dark"]{--bg:#0D1815;--card:#15251F;--ink:#E8F2ED;--mute:#9BB1A8;--line:#27403A;--brand:#3FCB98;--brandink:#06241A;--hi:#17352B;--amber:#F0B34D;--bar2:#E2A33B}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Manrope,system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:560px;margin:0 auto;padding:16px}
+h1{font-size:26px;line-height:1.15;margin:6px 0 4px;font-weight:800}
+h2{font-size:19px;margin:0 0 8px}
+.sub{color:var(--mute);margin:0 0 14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+label{display:block;font-size:13px;color:var(--mute);margin-bottom:3px;font-weight:700}
+input,select{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px}
+input:focus,select:focus,summary:focus-visible{outline:3px solid var(--brand);outline-offset:1px}
+.full{grid-column:1/-1}
+.res{background:var(--brand);color:var(--brandink);border-radius:16px;padding:16px;margin-bottom:12px}
+.res small{opacity:.85}
+.big{font-size:40px;font-weight:800;line-height:1.1}
+.split{display:flex;height:12px;border-radius:8px;overflow:hidden;margin:10px 0 6px;background:var(--line)}
+.split i{display:block;height:100%}
+.leg{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--mute)}
+.leg b{color:var(--ink)}
+.row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line)}
+.row:last-child{border:0}
+.save{background:var(--hi);border-radius:12px;padding:12px;margin-top:10px;font-weight:700}
+svg{width:100%;height:auto;display:block}
+.sc{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:420px}
+th,td{padding:6px 8px;text-align:right;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left}
+summary{cursor:pointer;font-weight:800}
+.ad{border:1px dashed var(--line);color:var(--mute);text-align:center;font-size:12px;padding:26px 10px;border-radius:10px;margin-bottom:12px}
+.info p{color:var(--mute);margin:6px 0;font-size:15px}
+.note{font-size:12px;color:var(--mute);text-align:center;margin:14px 0}
+</style>
+</head>
+<body>
+<main>
+<h1>Mortgage calculator</h1>
+<p class="sub">See your real monthly payment and how extra payments cut years off your loan.</p>
+
+<div class="card">
+<div class="grid">
+<div class="full"><label for="cur">Currency</label>
+<select id="cur"><option value="$">US dollar ($)</option><option value="£">British pound (£)</option><option value="C$">Canadian dollar (C$)</option><option value="A$">Australian dollar (A$)</option><option value="€">Euro (€)</option></select></div>
+<div><label for="price">Home price</label><input id="price" type="number" inputmode="decimal" value="400000"></div>
+<div><label for="down">Down payment</label><input id="down" type="number" inputmode="decimal" value="80000"></div>
+<div><label for="rate">Interest rate (%)</label><input id="rate" type="number" inputmode="decimal" step="0.01" value="6.5"></div>
+<div><label for="term">Loan term</label><select id="term"><option>10</option><option>15</option><option>20</option><option>25</option><option selected>30</option></select></div>
+<div><label for="tax">Property tax (% per year)</label><input id="tax" type="number" inputmode="decimal" step="0.01" value="1.1"></div>
+<div><label for="ins">Insurance (per year)</label><input id="ins" type="number" inputmode="decimal" value="1200"></div>
+<div class="full"><label for="extra">Extra payment each month</label><input id="extra" type="number" inputmode="decimal" value="0"></div>
+</div>
+</div>
+
+<div class="res" aria-live="polite">
+<small>Estimated monthly payment</small>
+<div class="big" id="total"></div>
+<div class="split"><i id="s1" style="background:var(--brandink)"></i><i id="s2" style="background:var(--bar2)"></i><i id="s3" style="background:#7FB5A0"></i></div>
+<div class="leg"><span style="color:var(--brandink)">Loan <b id="l1" style="color:inherit"></b></span><span style="color:var(--brandink)">Tax <b id="l2" style="color:inherit"></b></span><span style="color:var(--brandink)">Insurance <b id="l3" style="color:inherit"></b></span></div>
+</div>
+
+<div class="card">
+<h2>Loan summary</h2>
+<div class="row"><span>Loan amount</span><b id="loan"></b></div>
+<div class="row"><span>Total interest</span><b id="int"></b></div>
+<div class="row"><span>Total cost of loan</span><b id="cost"></b></div>
+<div class="row"><span>Paid off in</span><b id="pay"></b></div>
+<div class="save" id="save" hidden></div>
+</div>
+
+<div class="ad">Advertisement</div>
+
+<div class="card">
+<h2>Balance over time</h2>
+<svg id="ch" viewBox="0 0 400 180" role="img" aria-label="Loan balance over time"></svg>
+<div class="leg"><span>Solid: with your extra payment</span><span>Dashed: standard payment</span></div>
+</div>
+
+<div class="card">
+<details>
+<summary>Year-by-year schedule</summary>
+<div class="sc"><table><thead><tr><th>Year</th><th>Principal</th><th>Interest</th><th>Balance</th></tr></thead><tbody id="tb"></tbody></table></div>
+</details>
+</div>
+
+<div class="card info">
+<h2>How this works</h2>
+<p>Your payment is based on the loan amount (price minus down payment), the interest rate and the term. Property tax and insurance are added on top so you see the full monthly cost.</p>
+<p>Extra payments go straight to the loan balance, so you pay less interest and finish sooner. Even a small amount each month can save thousands over the life of the loan.</p>
+</div>
+<p class="note">Estimates only. Your lender’s figures may differ. This is not financial advice.</p>
+</main>
+<script>
+var $=function(i){return document.getElementById(i)};
+var ids=["cur","price","down","rate","term","tax","ins","extra"];
+function num(i){var v=parseFloat($(i).value);return isFinite(v)&&v>0?v:0}
+function money(x){return $("cur").value+Math.round(x).toLocaleString("en-US")}
+function sim(P,r,n,pm,extra){
+var bal=P,ti=0,m=0,yrs=[{p:0,i:0,b:P}],yp=0,yi=0,pts=[P];
+while(bal>0.005&&m<n+600){
+var i=bal*r,pr=pm+extra-i;
+if(pr>bal)pr=bal;if(pr<=0)break;
+bal-=pr;ti+=i;m++;yp+=pr;yi+=i;
+if(m%12===0){yrs.push({p:yp,i:yi,b:bal});pts.push(bal);yp=0;yi=0}}
+if(m%12!==0){yrs.push({p:yp,i:yi,b:Math.max(bal,0)});pts.push(Math.max(bal,0))}
+return {m:m,ti:ti,yrs:yrs,pts:pts}}
+function dur(m){var y=Math.floor(m/12),mo=m%12;return y+" yr"+(mo?" "+mo+" mo":"")}
+function calc(){
+var price=num("price"),down=Math.min(num("down"),price),P=price-down,r=num("rate")/1200,n=num("term")*12;
+var pm=P===0?0:(r===0?P/n:P*r/(1-Math.pow(1+r,-n)));
+var tax=price*num("tax")/1200,ins=num("ins")/12,ex=num("extra");
+var tot=pm+tax+ins+ex;
+$("total").textContent=money(tot);
+var base=pm+tax+ins||1;
+$("s1").style.width=(pm/base*100)+"%";$("s2").style.width=(tax/base*100)+"%";$("s3").style.width=(ins/base*100)+"%";
+$("l1").textContent=money(pm);$("l2").textContent=money(tax);$("l3").textContent=money(ins);
+var a=sim(P,r,n,pm,0),b=sim(P,r,n,pm,ex);
+$("loan").textContent=money(P);$("int").textContent=money(b.ti);$("cost").textContent=money(P+b.ti);$("pay").textContent=dur(b.m);
+var s=$("save");
+if(ex>0&&a.ti>b.ti){s.hidden=false;s.textContent="Extra payments save you "+money(a.ti-b.ti)+" in interest and "+dur(a.m-b.m)+"."}else s.hidden=true;
+var W=400,H=180,pl=10,pr2=10,pt=10,pb=22,mx=P||1,L=a.pts.length;
+function path(p){return p.map(function(v,i){return (i?"L":"M")+(pl+i/(L-1||1)*(W-pl-pr2)).toFixed(1)+" "+(pt+(1-v/mx)*(H-pt-pb)).toFixed(1)}).join(" ")}
+var bp=b.pts.slice();while(bp.length<L)bp.push(0);
+$("ch").innerHTML='<path d="'+path(a.pts)+'" fill="none" stroke="var(--mute)" stroke-width="2" stroke-dasharray="5 4"/><path d="'+path(bp)+'" fill="none" stroke="var(--brand)" stroke-width="3"/><text x="'+pl+'" y="174" font-size="11" fill="var(--mute)">Year 0</text><text x="'+(W-pr2)+'" y="174" font-size="11" text-anchor="end" fill="var(--mute)">Year '+(L-1)+'</text>';
+$("tb").innerHTML=b.yrs.slice(1).map(function(y,i){return"<tr><td>"+(i+1)+"</td><td>"+money(y.p)+"</td><td>"+money(y.i)+"</td><td>"+money(y.b)+"</td></tr>"}).join("")}
+ids.forEach(function(i){$(i).addEventListener("input",calc);$(i).addEventListener("change",calc)});
+calc();
+</script>
+</body>
+</html>
